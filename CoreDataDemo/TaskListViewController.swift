@@ -8,6 +8,7 @@
 import UIKit
 
 class TaskListViewController: UITableViewController {
+    
     private let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     private var taskList: [Task] = []
@@ -84,6 +85,21 @@ class TaskListViewController: UITableViewController {
         present(alert, animated: true)
     }
     
+    private func showEditAlert(with title: String,_ message: String, and task: Task) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
+            guard let newName = alert.textFields?.first?.text, !newName.isEmpty else { return }
+            self.edit(task, newName)
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
+        alert.addAction(saveAction)
+        alert.addAction(cancelAction)
+        alert.addTextField { textField in
+            textField.text = task.title
+        }
+        present(alert, animated: true)
+    }
+    
     private func save(_ taskName: String) {
         let task = Task(context: context)
         task.title = taskName
@@ -95,6 +111,19 @@ class TaskListViewController: UITableViewController {
         if context.hasChanges {
             do {
                 try context.save()
+            } catch let error {
+                print(error)
+            }
+        }
+    }
+    
+    private func edit(_ task: Task,_ newName: String) {
+        task.title = newName
+    
+        if context.hasChanges {
+            do {
+                try context.save()
+                tableView.reloadData()
             } catch let error {
                 print(error)
             }
@@ -114,5 +143,27 @@ extension TaskListViewController {
         content.text = task.title
         cell.contentConfiguration = content
         return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        let task = taskList[indexPath.row]
+        
+        if editingStyle == .delete {
+            taskList.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .fade)
+            context.delete(task)
+            
+            do {
+                try context.save()
+            } catch let error {
+                print(error)
+            }
+        }
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let task = taskList[indexPath.row]
+        showEditAlert(with: "Editing", "Now you can edit the task", and: task)
     }
 }
