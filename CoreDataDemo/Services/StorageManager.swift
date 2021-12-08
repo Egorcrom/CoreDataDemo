@@ -32,5 +32,8 @@ func saveContext() {
         }
     }
 }
+    func delete(_ task: Task){
+        persistentContainer.viewContext.delete(task)
+    }
     
 }
