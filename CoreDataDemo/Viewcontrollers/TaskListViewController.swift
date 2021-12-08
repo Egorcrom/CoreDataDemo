@@ -9,7 +9,8 @@ import UIKit
 
 class TaskListViewController: UITableViewController {
     
-    private let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    private let storage = StorageManager.shared
+    private let context = StorageManager.shared.persistentContainer.viewContext
     
     private var taskList: [Task] = []
     private let cellID = "task"
@@ -108,26 +109,14 @@ class TaskListViewController: UITableViewController {
         let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
         tableView.insertRows(at: [cellIndex], with: .automatic)
         
-        if context.hasChanges {
-            do {
-                try context.save()
-            } catch let error {
-                print(error)
-            }
-        }
+        storage.saveContext()
     }
     
     private func edit(_ task: Task,_ newName: String) {
         task.title = newName
-    
-        if context.hasChanges {
-            do {
-                try context.save()
-                tableView.reloadData()
-            } catch let error {
-                print(error)
-            }
-        }
+        
+        storage.saveContext()
+        tableView.reloadData()
     }
 }
 
@@ -152,12 +141,8 @@ extension TaskListViewController {
             taskList.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .fade)
             context.delete(task)
+            storage.saveContext()
             
-            do {
-                try context.save()
-            } catch let error {
-                print(error)
-            }
         }
     }
     
